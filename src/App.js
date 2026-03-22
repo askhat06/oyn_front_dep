@@ -15,7 +15,9 @@ import AddVacancy from "./Pages/CompanyPage/AddVacancy";
 import Vacancies from "./Pages/CompanyPage/Vacancies";
 import EditPhotoshoot from "./Pages/PhotoshootsPage/EditPhotoshoot";
 import RefillBalance from "./Components/RefilBalance";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import { setUser } from "./redux/userSlice";
+import { apiFetch, legacyApiBaseUrl } from "./lib/api";
 
 import CourseCatalog from "./Pages/CoursePage/CourseCatalog";
 import CourseLandingPage from "./Pages/CoursePage/CourseLandingPage";
@@ -28,10 +30,24 @@ export const CourseContext = createContext();
 
 function App() {
   const theme = useSelector((state) => state.theme.theme);
+  const dispatch = useDispatch();
 
   useEffect(() => {
     document.body.className = theme; 
   }, [theme]);
+
+  // Session Hydration
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      apiFetch("/api/auth/me")
+        .then(user => dispatch(setUser(user)))
+        .catch(err => {
+          console.error("Session hydration failed", err);
+          // apiFetch automatically handles 401s by clearing the token and redirecting.
+        });
+    }
+  }, [dispatch]);
 
   const [users, setUsers] = useState([]);
   const [gallery, setGallery] = useState([]);
@@ -39,23 +55,23 @@ function App() {
   const [courses, setCourses] = useState([]);
 
   useEffect(() => {
-    // Legacy json-server endpoints (kept to prevent breaking existing functionality)
-    fetch(`http://localhost:3001/gallery`)
+    // Legacy json-server endpoints dynamically sourced from env
+    fetch(`${legacyApiBaseUrl}/gallery`)
       .then(response => response.json())
       .then(data => setGallery(data)).catch(() => console.log("Legacy gallery backend not running"));
 
-    fetch(`http://localhost:3001/users`)
+    fetch(`${legacyApiBaseUrl}/users`)
       .then(response => response.json())
       .then(data => setUsers(data)).catch(() => console.log("Legacy users backend not running"));
 
-    fetch(`http://localhost:3001/photoshoots`)
+    fetch(`${legacyApiBaseUrl}/photoshoots`)
       .then(response => response.json())
       .then(data => setPhotoshoots(data)).catch(() => console.log("Legacy photoshoots backend not running"));
 
-    // Spring Boot endpoint for eLearning courses
-    fetch(`http://localhost:7777/api/courses`)
-      .then(response => response.json())
-      .then(data => setCourses(data)).catch((e) => console.error("Spring Boot backend not running or /api/courses failed", e));
+    // Spring Boot endpoint for eLearning courses via centralized api client
+    apiFetch("/api/courses")
+      .then(data => setCourses(data))
+      .catch((e) => console.error("Spring Boot backend not running or /api/courses failed", e));
   }, [])
 
   return (

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
+import { apiFetch } from "../lib/api";
 import 'react-toastify/dist/ReactToastify.css';
 function Registration() {
   const navigate = useNavigate();
@@ -75,24 +76,20 @@ function Registration() {
     };
 
     try {
-      const response = await fetch("http://localhost:7777/api/auth/register", {
+      await apiFetch("/api/auth/register", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify(newUser),
       });
 
-      if (response.ok) {
-        toast.success("Registration successful! Please log in.");
-        navigate("/login");
-      } else {
-        const errorData = await response.json();
-        alert(`Registration failed: ${errorData.message || "Something went wrong"}`);
-      }
+      toast.success("Registration successful! Please log in.");
+      navigate("/login");
     } catch (error) {
       console.error("Error during registration:", error);
-      alert("Registration failed. Server unreachable.");
+      if (error.status === 429) {
+        toast.error("Too many registration attempts. Please wait.");
+      } else {
+        toast.error(`Registration failed: ${error.message || "Unknown error"}`);
+      }
     }
   }
 

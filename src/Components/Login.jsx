@@ -8,6 +8,7 @@ import 'react-toastify/dist/ReactToastify.css';
 
 import { useDispatch } from "react-redux";
 import { setUser } from "../redux/userSlice";
+import { apiFetch } from "../lib/api";
 
 function Login() {
     const dispatch = useDispatch();
@@ -20,41 +21,32 @@ function Login() {
         e.preventDefault();
 
         try {
-            const response = await fetch("http://localhost:7777/api/auth/login", {
+            const data = await apiFetch("/api/auth/login", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email, password })
             });
 
-            if (!response.ok) {
-                toast.error("Invalid credentials");
-                return;
-            }
-
-            const data = await response.json();
             const token = data.token || data.accessToken || data.jwt;
             
             if (token) {
                 localStorage.setItem("token", token);
                 
                 // Fetch user data
-                const meResponse = await fetch("http://localhost:7777/api/auth/me", {
-                    headers: { "Authorization": `Bearer ${token}` }
-                });
-                
-                if (meResponse.ok) {
-                    const user = await meResponse.json();
-                    dispatch(setUser(user));
-                    toast.success("You have successfully logged in");
-                    navigate("/");
-                } else {
-                    toast.error("Failed to fetch user profile");
-                }
+                const user = await apiFetch("/api/auth/me");
+                dispatch(setUser(user));
+                toast.success("You have successfully logged in");
+                navigate("/");
             } else {
                 toast.error("Invalid token response");
             }
         } catch (error) {
-            toast.error("Server connection failed");
+            if (error.status === 401) {
+                toast.error("Invalid credentials");
+            } else if (error.status === 429) {
+                toast.error("Too many login attempts. Please wait.");
+            } else {
+                toast.error(error.message || "Server connection failed");
+            }
         }
     }
 

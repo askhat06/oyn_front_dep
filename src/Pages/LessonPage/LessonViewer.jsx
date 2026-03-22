@@ -2,17 +2,26 @@ import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import Header from "../../Components/Header";
 import Footer from "../../Components/Footer";
+import { apiFetch } from "../../lib/api";
+import { toast } from "react-toastify";
 
 function LessonViewer() {
   const { courseSlug, lessonSlug } = useParams();
   const [lessonData, setLessonData] = useState(null);
 
   useEffect(() => {
-    // According to snapshot: /api/courses/{courseSlug}/lessons/{lessonSlug}
-    fetch(`http://localhost:7777/api/courses/${courseSlug}/lessons/${lessonSlug}`)
-      .then(res => res.json())
+    // Backend returns 403 or 401 if restricted, 404 if not found
+    apiFetch(`/api/courses/${courseSlug}/lessons/${lessonSlug}`)
       .then(data => setLessonData(data))
-      .catch(err => console.error("Error fetching lesson:", err));
+      .catch(err => {
+        if (err.status === 404) {
+          toast.error("Lesson not found");
+        } else if (err.status === 403 || err.status === 401) {
+          toast.error("You must be enrolled to view this lesson.");
+        } else {
+          console.error("Error fetching lesson:", err);
+        }
+      });
   }, [courseSlug, lessonSlug]);
 
   if (!lessonData) return <div><Header/><p style={{padding:'40px'}}>Loading lesson...</p><Footer/></div>;

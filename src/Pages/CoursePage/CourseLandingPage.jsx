@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import Header from "../../Components/Header";
 import Footer from "../../Components/Footer";
 import { toast } from "react-toastify";
+import { apiFetch } from "../../lib/api";
 
 function CourseLandingPage() {
   const { slug } = useParams();
@@ -12,38 +13,43 @@ function CourseLandingPage() {
   const [isEnrolling, setIsEnrolling] = useState(false);
 
   useEffect(() => {
-    fetch(`http://localhost:7777/api/courses/${slug}`)
-      .then(res => res.json())
+    apiFetch(`/api/courses/${slug}`)
       .then(data => setCourse(data))
-      .catch(err => console.error("Error fetching course:", err));
+      .catch(err => {
+        if (err.status === 404) {
+          toast.error("Course not found");
+        } else {
+          console.error("Error fetching course:", err);
+        }
+      });
   }, [slug]);
 
   const handleEnrollment = async (e) => {
     e.preventDefault();
     setIsEnrolling(true);
     
-    // Enrollment endpoint according to backend snapshot: /api/enrollments
-    // "EnrollmentService finds or creates a PlatformUser by normalized email."
-    
     try {
-      const response = await fetch(`http://localhost:7777/api/enrollments`, {
+      await apiFetch(`/api/enrollments`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email, courseId: course.id })
       });
 
-      if (response.ok) {
-        toast.success("Successfully enrolled!");
-        // If there is a first lesson, navigate there
+      toast.success("Successfully enrolled!");
+      // If there is a first lesson, navigate there
+      if (course.lessons && course.lessons.length > 0) {
+        navigate(`/courses/${slug}/lessons/${course.lessons[0].slug}`);
+      }
+    } catch (error) {
+      if (error.status === 409) {
+        toast.info("You are already enrolled in this course!");
         if (course.lessons && course.lessons.length > 0) {
           navigate(`/courses/${slug}/lessons/${course.lessons[0].slug}`);
         }
+      } else if (error.status === 429) {
+        toast.error("Too many requests. Please slow down.");
       } else {
-        const err = await response.json();
-        toast.error(`Enrollment failed: ${err.message || "Unknown error"}`);
+        toast.error(`Enrollment failed: ${error.message || "Unknown error"}`);
       }
-    } catch (error) {
-      toast.error("Network error during enrollment");
     } finally {
       setIsEnrolling(false);
     }
