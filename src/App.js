@@ -17,13 +17,17 @@ import EditPhotoshoot from "./Pages/PhotoshootsPage/EditPhotoshoot";
 import RefillBalance from "./Components/RefilBalance";
 import { useSelector } from "react-redux";
 
+import CourseCatalog from "./Pages/CoursePage/CourseCatalog";
+import CourseLandingPage from "./Pages/CoursePage/CourseLandingPage";
+import LessonViewer from "./Pages/LessonPage/LessonViewer";
+
 export const AuthContext = createContext();
 export const GalleryContext = createContext();
 export const PhotoshootsContext = createContext();
+export const CourseContext = createContext();
 
 function App() {
   const theme = useSelector((state) => state.theme.theme);
-
 
   useEffect(() => {
     document.body.className = theme; 
@@ -32,20 +36,26 @@ function App() {
   const [users, setUsers] = useState([]);
   const [gallery, setGallery] = useState([]);
   const [photoshoots, setPhotoshoots] = useState([]);
-
+  const [courses, setCourses] = useState([]);
 
   useEffect(() => {
+    // Legacy json-server endpoints (kept to prevent breaking existing functionality)
     fetch(`http://localhost:3001/gallery`)
       .then(response => response.json())
-      .then(data => setGallery(data));
+      .then(data => setGallery(data)).catch(() => console.log("Legacy gallery backend not running"));
 
     fetch(`http://localhost:3001/users`)
       .then(response => response.json())
-      .then(data => setUsers(data));
+      .then(data => setUsers(data)).catch(() => console.log("Legacy users backend not running"));
 
     fetch(`http://localhost:3001/photoshoots`)
       .then(response => response.json())
-      .then(data => setPhotoshoots(data));
+      .then(data => setPhotoshoots(data)).catch(() => console.log("Legacy photoshoots backend not running"));
+
+    // Spring Boot endpoint for eLearning courses
+    fetch(`http://localhost:7777/api/courses`)
+      .then(response => response.json())
+      .then(data => setCourses(data)).catch((e) => console.error("Spring Boot backend not running or /api/courses failed", e));
   }, [])
 
   return (
@@ -53,35 +63,41 @@ function App() {
     <AuthContext.Provider value={{ users }}>
       <GalleryContext.Provider value={{ gallery, setGallery }}>
         <PhotoshootsContext.Provider value={{ photoshoots, setPhotoshoots }}>
-          <div className="wrapper">
-            <BrowserRouter>
-              <Routes>
+          <CourseContext.Provider value={{ courses, setCourses }}>
+            <div className="wrapper">
+              <BrowserRouter>
+                <Routes>
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/registration" element={<Registration />} />
 
-                <Route path="/login" element={<Login />} />
-                <Route path="/registration" element={<Registration />} />
+                  <Route path="/" element={<IndexPage />} />
+                  <Route path="/gallery" element={<GalleryPage />} />
+                  <Route path="/add-item" element={< AddGalleryItem />} />
+                  <Route path="/edit-photo/:id" element={<EditPhoto />} />
 
-                <Route path="/" element={<IndexPage />} />
-                <Route path="/gallery" element={<GalleryPage />} />
-                <Route path="/add-item" element={< AddGalleryItem />} />
-                <Route path="/edit-photo/:id" element={<EditPhoto />} />
+                  <Route path="/photoshoots" element={<PhotoshootsPage />} />
+                  <Route path="/add-photoshoot" element={<AddPhotoshoot />} />
+                  <Route path="/edit-photoshoot/:id" element={<EditPhotoshoot />} />
 
-                <Route path="/photoshoots" element={<PhotoshootsPage />} />
-                <Route path="/add-photoshoot" element={<AddPhotoshoot />} />
-                <Route path="/edit-photoshoot/:id" element={<EditPhotoshoot />} />
+                  <Route path="/company" element={<CompanyPage />} />
 
-                <Route path="/company" element={<CompanyPage />} />
+                  <Route path="/refill-balance/:id" element={<RefillBalance />} />
 
-                <Route path="/refill-balance/:id" element={<RefillBalance />} />
+                  <Route path="/profile/:role/:id" element={<ProfileSwitch />} />
 
-                <Route path="/profile/:role/:id" element={<ProfileSwitch />} />
+                  <Route path="/add-vacancy" element={<AddVacancy />} />
+                  <Route path="/all-vacancies/:id" element={<Vacancies />} />
+                  <Route path="/edit" element={<Edit />} />
 
-                <Route path="/add-vacancy" element={<AddVacancy />} />
-                <Route path="/all-vacancies/:id" element={<Vacancies />} />
-                <Route path="/edit" element={<Edit />} />
+                  {/* eLearning MVP Routes */}
+                  <Route path="/courses" element={<CourseCatalog />} />
+                  <Route path="/courses/:slug" element={<CourseLandingPage />} />
+                  <Route path="/courses/:courseSlug/lessons/:lessonSlug" element={<LessonViewer />} />
 
-              </Routes>
-            </BrowserRouter>
-          </div>
+                </Routes>
+              </BrowserRouter>
+            </div>
+          </CourseContext.Provider>
         </PhotoshootsContext.Provider>
       </GalleryContext.Provider>
     </AuthContext.Provider>

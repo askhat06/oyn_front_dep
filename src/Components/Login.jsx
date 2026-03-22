@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
 
-import bcrypt from "bcryptjs";
+
 
 import { useDispatch } from "react-redux";
 import { setUser } from "../redux/userSlice";
@@ -19,26 +19,43 @@ function Login() {
     async function LoginSubmit(e) {
         e.preventDefault();
 
-        const response = await fetch(`http://localhost:3001/users?email=${email}`);
-        const data = await response.json();
+        try {
+            const response = await fetch("http://localhost:7777/api/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password })
+            });
 
-        if (!data || data.length === 0) {
-            toast.error("User not found");
-            return;
+            if (!response.ok) {
+                toast.error("Invalid credentials");
+                return;
+            }
+
+            const data = await response.json();
+            const token = data.token || data.accessToken || data.jwt;
+            
+            if (token) {
+                localStorage.setItem("token", token);
+                
+                // Fetch user data
+                const meResponse = await fetch("http://localhost:7777/api/auth/me", {
+                    headers: { "Authorization": `Bearer ${token}` }
+                });
+                
+                if (meResponse.ok) {
+                    const user = await meResponse.json();
+                    dispatch(setUser(user));
+                    toast.success("You have successfully logged in");
+                    navigate("/");
+                } else {
+                    toast.error("Failed to fetch user profile");
+                }
+            } else {
+                toast.error("Invalid token response");
+            }
+        } catch (error) {
+            toast.error("Server connection failed");
         }
-
-        const user = data[0];
-
-        const checkPassword = await bcrypt.compare(password, user.password);
-
-        if (checkPassword) {
-            toast.success("You have successfully logged in")
-            dispatch(setUser(user))
-            navigate("/");
-        } else {
-            toast.error("Invalid credentials");
-        }
-
     }
 
     return (

@@ -2,8 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
-import bcrypt from "bcryptjs";
-
+import 'react-toastify/dist/ReactToastify.css';
 function Registration() {
   const navigate = useNavigate();
   const [role, setRole] = useState(null);
@@ -52,54 +51,31 @@ function Registration() {
       return;
     }
 
-    const hashedPassword = await bcrypt.hash(formData.password, 10);
-
-    // Общая структура пользователя
-    const newUser = {
-      email: formData.email,
-      password: hashedPassword,
-      role,
-      avatarUrl: "default-avatar.jpg", // применяется ко всем
-    };
-
-    if (role === "student") {
+    // Spring Boot expects fullName, email, password, role
+    let fullName = "User";
+    if (role === "student" || role === "professor") {
       if (!formData.username) {
         alert("Username is required.");
         return;
       }
-      Object.assign(newUser, {
-        username: formData.username,
-        balance: 0,
-      });
-    }
-
-    if (role === "professor") {
-      if (!formData.username || !formData.specialization) {
-        alert("Username and specialization are required.");
-        return;
-      }
-      Object.assign(newUser, {
-        username: formData.username,
-        specialization: formData.specialization,
-        sales: 0,
-      });
-    }
-
-    if (role === "company") {
+      fullName = formData.username;
+    } else if (role === "company") {
       if (!formData.companyName) {
         alert("Company name is required.");
         return;
       }
-      Object.assign(newUser, {
-        companyName: formData.companyName,
-        website: formData.website,
-        logo: "default-logo.jpg",
-      });
+      fullName = formData.companyName;
     }
 
+    const newUser = {
+      fullName,
+      email: formData.email,
+      password: formData.password,
+      role: role.toUpperCase(), // backend might expect uppercase roles like STUDENT, PROFESSOR
+    };
 
     try {
-      const response = await fetch("http://localhost:3001/users", {
+      const response = await fetch("http://localhost:7777/api/auth/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -116,7 +92,7 @@ function Registration() {
       }
     } catch (error) {
       console.error("Error during registration:", error);
-      alert("Registration failed. Please try again later.");
+      alert("Registration failed. Server unreachable.");
     }
   }
 
