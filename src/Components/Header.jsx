@@ -21,9 +21,9 @@ function Header() {
 
                     <div className="navbar-links">
                         <Link to="/">Home</Link>
-                        <Link to="/gallery">Gallery</Link>
-                        <Link to="/photoshoots">Photoshoots</Link>
-                        <Link to="/company">Company</Link>
+                        <Link to="/courses">Courses Catalog</Link>
+                        <Link to="/photoshoots">Categories</Link>
+                        <Link to="/company">About Platform</Link>
                     </div>
                     
                     <ThemeToggle />
