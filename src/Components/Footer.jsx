@@ -9,7 +9,7 @@ function Footer() {
                 <div className="footer-container">
 
                     <div className="footer-logo">
-                        <Link to="/">OYN</Link>
+                        <Link to="/">OYAN</Link>
                         &copy; Created by 
                     </div>
 
