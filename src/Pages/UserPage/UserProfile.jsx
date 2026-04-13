@@ -71,13 +71,13 @@ function UserProfile() {
         const refund = shoot.price;
         const newBalance = profile.balance + refund;
 
-        const res = await fetch(`http://localhost:3001/users/${profile.id}`, {
+        await fetch(`http://localhost:3001/users/${profile.id}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ balance: newBalance }),
         });
 
-        const delRes = await fetch(`http://localhost:3001/cart-photoshoots/${itemId}`, {
+        await fetch(`http://localhost:3001/cart-photoshoots/${itemId}`, {
             method: "DELETE",
         });
 

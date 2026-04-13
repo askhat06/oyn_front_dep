@@ -1,6 +1,4 @@
-import { useContext } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { AuthContext } from "../App";
+import { Link } from "react-router-dom";
 import ThemeToggle from "./ThemeToggle"; 
 import { useDispatch, useSelector } from "react-redux";
 import { clearUser } from "../redux/userSlice";

@@ -58,7 +58,7 @@ function PhItem({ photoshoot }) {
     const newBalance = user.balance - photoshoot.price;
     const updatedSales = (Number(actualAuthor.sales) || 0) + photoshoot.price;
 
-    const addRes = await fetch(`http://localhost:3001/cart-photoshoots`, {
+    await fetch(`http://localhost:3001/cart-photoshoots`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

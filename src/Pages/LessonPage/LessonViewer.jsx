@@ -13,33 +13,33 @@ function LessonViewer() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    async function loadData() {
+      try {
+        setLoading(true);
+
+        // Fetch lesson data
+        const lesson = await apiFetch(`/api/courses/${courseSlug}/lessons/${lessonSlug}`);
+        setLessonData(lesson);
+
+        // Fetch course data for details and playlist
+        const course = await apiFetch(`/api/courses/${courseSlug}`);
+        setCourseData(course);
+      } catch (err) {
+        if (err.status === 404) {
+          toast.error("Lesson not found");
+        } else if (err.status === 403 || err.status === 401) {
+          toast.error("You must be enrolled to view this lesson.");
+        } else {
+          console.error("Error fetching data:", err);
+          toast.error("Failed to load lesson");
+        }
+      } finally {
+        setLoading(false);
+      }
+    }
+
     loadData();
   }, [courseSlug, lessonSlug]);
-
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      
-      // Fetch lesson data
-      const lesson = await apiFetch(`/api/courses/${courseSlug}/lessons/${lessonSlug}`);
-      setLessonData(lesson);
-
-      // Fetch course data for details and playlist
-      const course = await apiFetch(`/api/courses/${courseSlug}`);
-      setCourseData(course);
-    } catch (err) {
-      if (err.status === 404) {
-        toast.error("Lesson not found");
-      } else if (err.status === 403 || err.status === 401) {
-        toast.error("You must be enrolled to view this lesson.");
-      } else {
-        console.error("Error fetching data:", err);
-        toast.error("Failed to load lesson");
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
 
   if (loading) {
     return (
