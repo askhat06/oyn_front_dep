@@ -24,7 +24,7 @@ function Registration() {
       role: selectedRole,
       email: "",
       password: "",
-      username: selectedRole === "student" || selectedRole === "professor" ? "" : undefined,
+    username: selectedRole === "student" || selectedRole === "professor" ? "" : undefined,
       specialization: selectedRole === "professor" ? "" : undefined,
       companyName: selectedRole === "company" ? "" : undefined,
       website: selectedRole === "company" ? "" : undefined,
@@ -99,7 +99,7 @@ function Registration() {
       {!role && (
         <section className="reg-hero-section">
           <div className="reg-card-container">
-            <div className="reg-card" onClick={() => handleRoleChange("user")}>
+            <div className="reg-card" onClick={() => handleRoleChange("student")}>
               <div
                 className="reg-card-background"
                 style={{ backgroundImage: 'url(img/IndexPage/user.jpg)' }}
