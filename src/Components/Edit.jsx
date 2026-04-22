@@ -20,7 +20,7 @@ function EditProfile() {
     }, [user]);
 
     async function handleUpdate() {
-        const response = await fetch(`http://localhost:3001/users/${user.id}`);
+        const response = await fetch(`http://localhost:3000/users/${user.id}`);
         const data = await response.json();
 
         const isSame = await bcrypt.compare(password, data.password);
@@ -35,7 +35,7 @@ function EditProfile() {
             password: hashedPassword
         };
 
-        const responseUpdate = await fetch(`http://localhost:3001/users/${user.id}`, {
+        const responseUpdate = await fetch(`http://localhost:3000/users/${user.id}`, {
             method: "PATCH",
             headers: {
                 "Content-Type": "application/json",

@@ -15,9 +15,8 @@ function Footer() {
 
                     <div className="footer-links">
                         <Link to="/">Home</Link>
-                        <Link to="/gallery">Gallery</Link>
-                        <Link to="/photoshoots">Photoshoots</Link>
-                        <Link to="/company">Company</Link>
+                        <Link to="/courses">Courses</Link>
+                        <Link to="/company">About Platform</Link>
                     </div>
 
                 </div>

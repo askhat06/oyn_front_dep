@@ -34,7 +34,7 @@ function Header() {
                     <div className="navbar-links">
                         <Link to="/">Home</Link>
                         <Link to="/courses">Courses Catalog</Link>
-                        <Link to="/photoshoots">My Courses</Link>
+                        <Link to="/courses">Courses</Link>
                         <Link to="/company">About Platform</Link>
                     </div>
                     

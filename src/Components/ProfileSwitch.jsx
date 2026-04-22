@@ -1,5 +1,4 @@
 import { useParams } from "react-router-dom";
-import PhotographerProfile from "../Pages/PhotographerPage/PhotographerProfile";
 import CompanyProfile from "../Pages/CompanyPage/CompanyProfile";
 import UserProfile from "../Pages/UserPage/UserProfile";
 import Header from "./Header";
@@ -11,8 +10,7 @@ function ProfileSwitch() {
 
   let ProfileComponent = null;
   if (normalizedRole === "company") ProfileComponent = <CompanyProfile />;
-  else if (normalizedRole === "professor") ProfileComponent = <PhotographerProfile />;
-  else if (normalizedRole === "user" || normalizedRole === "student") ProfileComponent = <UserProfile />;
+  else if (normalizedRole === "professor" || normalizedRole === "user" || normalizedRole === "student") ProfileComponent = <UserProfile />;
 
   if (!ProfileComponent) return (
     <>
@@ -32,5 +30,3 @@ function ProfileSwitch() {
 }
 
 export default ProfileSwitch;
-
-

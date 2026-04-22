@@ -49,7 +49,7 @@ function VerifyEmail() {
         <div className="login-box">
           <div className="login-container">
             <h2>Verification Failed</h2>
-            <p>This link is invalid or has expired. Please register again.</p>
+            <p>{errorMessage}</p>
           </div>
         </div>
       </div>
