@@ -1,7 +1,6 @@
 function Sidebar({ profile, activeTab, setActiveTab, isTeacher }) {
     const studentMenu = [
         { id: "courses", label: "My Courses" },
-        { id: "wishlist", label: "Wishlist" },
         { id: "certificates", label: "Certificates" },
         { id: "settings", label: "Settings" },
     ];
