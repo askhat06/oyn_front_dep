@@ -148,7 +148,7 @@ function Registration() {
             <div className="reg-card" onClick={() => handleRoleChange("professor")}>
               <div
                 className="reg-card-background"
-                style={{ backgroundImage: 'url(img/IndexPage/professor.jpg)' }}
+                style={{ backgroundImage: 'url(img/IndexPage/professor.png)' }}
               >
                 <div className="reg-content">
                   <div className="reg-card-category">role</div>

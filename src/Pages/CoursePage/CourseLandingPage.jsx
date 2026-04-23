@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 import Header from "../../Components/Header";
 import Footer from "../../Components/Footer";
 import { toast } from "react-toastify";
@@ -8,9 +9,9 @@ import styles from "./CourseLandingPage.module.css";
 function CourseLandingPage() {
   const { slug } = useParams();
   const navigate = useNavigate();
+  const user = useSelector((state) => state.user.user);
 
   const [course, setCourse] = useState(null);
-  const [email, setEmail] = useState("");
   const [isEnrolling, setIsEnrolling] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
 
@@ -22,32 +23,40 @@ function CourseLandingPage() {
       });
   }, [slug]);
 
-  const handleEnrollment = async (e) => {
-    e.preventDefault();
-    setIsEnrolling(true);
+  const handleEnrollment = async () => {
+    if (!user) {
+      navigate("/login");
+      return;
+    }
 
+    setIsEnrolling(true);
     try {
       await apiFetch(`/api/enrollments`, {
         method: "POST",
         body: JSON.stringify({
-          email,
-          courseId: course.id
+          courseSlug: slug,
+          fullName: user.fullName || user.username,
+          email: user.email,
+          locale: user.locale || "en"
         })
       });
-
-      toast.success("You are enrolled 🎉");
-
-      if (course.lessons?.length > 0) {
-        navigate(`/courses/${slug}/lessons/${course.lessons[0].slug}`);
-      }
+      toast.success("Enrolled!");
     } catch (error) {
-      if (error.status === 409) {
-        toast.info("Already enrolled");
-      } else {
+      if (error.status !== 409) {
         toast.error("Enrollment failed");
+        setIsEnrolling(false);
+        return;
       }
+      // 409 = already enrolled, proceed to lesson
     } finally {
       setIsEnrolling(false);
+    }
+
+    const firstLesson = course.lessons?.find(l => l.slug);
+    if (firstLesson) {
+      navigate(`/courses/${slug}/lessons/${firstLesson.slug}`);
+    } else {
+      toast.warn("This course has no lessons yet.");
     }
   };
 
@@ -108,19 +117,9 @@ function CourseLandingPage() {
 
       <div className={styles.price}>Free Course</div>
 
-      <form onSubmit={handleEnrollment}>
-        <input
-          className={styles.input}
-          type="email"
-          placeholder="Enter email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-
-        <button className={styles.enrollBtn}>
-          {isEnrolling ? "Enrolling..." : "Enroll Now"}
-        </button>
-      </form>
+      <button className={styles.enrollBtn} onClick={handleEnrollment} disabled={isEnrolling}>
+        {isEnrolling ? "Enrolling..." : "Enroll Now"}
+      </button>
 
       <div>
         <p>Lessons: {course.lessons?.length}</p>
