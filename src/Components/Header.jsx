@@ -5,7 +5,7 @@ import { clearUser } from "../redux/userSlice";
 
 const ROLE_LABELS = {
     company: "Company",
-    professor: "Professor",
+    professor: "Teacher",
     student: "Student",
 };
 
@@ -34,8 +34,7 @@ function Header() {
                     <div className="navbar-links">
                         <Link to="/">Home</Link>
                         <Link to="/courses">Courses Catalog</Link>
-                        <Link to="/courses">Courses</Link>
-                        <Link to="/company">About Platform</Link>
+                        <Link to="/about">About Platform</Link>
                     </div>
                     
                     <ThemeToggle />

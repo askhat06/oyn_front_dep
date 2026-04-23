@@ -24,21 +24,12 @@ function CourseStars({ rating }) {
 function CourseCatalog() {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("All Courses");
+  const [activeTab, setActiveTab] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("Latest");
-
-  const tabs = [
-    "All Courses",
-    "Algorithms",
-    "Calculus",
-    "College",
-    "Computer",
-    "Science",
-    "Engineering",
-    "More Courses",
-  ];
-
+  const levels = Array.from(
+    new Set(courses.map((course) => course.level || "Beginner")),
+  );
   useEffect(() => {
     loadCourses();
   }, []);
@@ -64,19 +55,27 @@ function CourseCatalog() {
     const matchesSearch =
       searchQuery === "" ||
       course.title.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSearch;
+
+    const matchesLevel =
+      activeTab === "All" || (course.level || "Beginner") === activeTab;
+
+    return matchesSearch && matchesLevel;
   });
 
   const sortedCourses = [...filteredCourses].sort((a, b) => {
     switch (sortBy) {
       case "Latest":
         return new Date(b.createdAt) - new Date(a.createdAt);
+
       case "Popular":
-        return (b.lessonCount || 0) - (a.lessonCount || 0);
+        return (b.enrollmentCount || 0) - (a.enrollmentCount || 0);
+
       case "Price: Low to High":
-        return 0; // Price not in model yet
+        return (a.price ?? Infinity) - (b.price ?? Infinity);
+
       case "Price: High to Low":
-        return 0;
+        return (b.price ?? -Infinity) - (a.price ?? -Infinity);
+
       default:
         return 0;
     }
@@ -108,13 +107,19 @@ function CourseCatalog() {
 
       {/* Navigation Tabs */}
       <div className="tabs-container">
-        {tabs.map((tab) => (
+        <button
+          className={`tab ${activeTab === "All" ? "active" : ""}`}
+          onClick={() => setActiveTab("All")}
+        >
+          All Courses
+        </button>
+        {levels.map((level) => (
           <button
-            key={tab}
-            className={`tab ${activeTab === tab ? "active" : ""}`}
-            onClick={() => setActiveTab(tab)}
+            key={level}
+            className={`tab ${activeTab === level ? "active" : ""}`}
+            onClick={() => setActiveTab(level)}
           >
-            {tab}
+            {level}
           </button>
         ))}
       </div>

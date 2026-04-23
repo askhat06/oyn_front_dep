@@ -152,7 +152,7 @@ function Registration() {
               >
                 <div className="reg-content">
                   <div className="reg-card-category">role</div>
-                  <h3 className="reg-card-heading">PROFESSOR</h3>
+                  <h3 className="reg-card-heading">TEACHER</h3>
                 </div>
               </div>
             </div>

@@ -17,6 +17,7 @@ import CourseCatalog from "./Pages/CoursePage/CourseCatalog";
 import CourseLandingPage from "./Pages/CoursePage/CourseLandingPage";
 import LessonViewer from "./Pages/LessonPage/LessonViewer";
 import VerifyEmail from "./Pages/VerifyEmailPage/VerifyEmail";
+import AboutPlatform from "./Pages/About/AboutPlatform";
 
 export const AuthContext = createContext();
 export const CourseContext = createContext();
@@ -61,7 +62,7 @@ function App() {
 
               <Route path="/" element={<IndexPage />} />
 
-              <Route path="/company" element={<CompanyPage />} />
+              <Route path="/about" element={<AboutPlatform />} />
 
               <Route path="/refill-balance/:id" element={<RefillBalance />} />
               <Route path="/profile/:role/:id" element={<ProfileSwitch />} />

@@ -1,13 +1,13 @@
-import React, { useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import Feature from "./Feature";
 import "./HomePage.css";
-
+import { apiFetch } from "../../lib/api";
 
 const features = [
   {
     id: 1,
-    photo: "practical", 
+    photo: "practical",
     title: "Practical Courses",
     text: "Real-world skills in IT, business, and design.",
   },
@@ -15,7 +15,7 @@ const features = [
     id: 2,
     photo: "live",
     title: "Live Classes",
-    text: "Interactive sessions with mentors in real time.",
+    text: "Interactive sessions with teachers in real time.",
   },
   {
     id: 3,
@@ -54,45 +54,26 @@ const trendingTopics = [
 
 function CoursesSlider() {
   const sliderRef = useRef(null);
+  const [courses, setCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const courses = [
-  {
-    id: 1,
-    title: "React for Beginners",
-    author: "John Doe",
-    rating: 4.8,
-    price: "$49",
-    image:
-      "https://images.unsplash.com/photo-1633356122544-f134324a6cee?auto=format&fit=crop&w=800&q=80",
-  },
-  {
-    id: 2,
-    title: "Machine Learning Basics",
-    author: "Andrew Ng",
-    rating: 4.9,
-    price: "$79",
-    image:
-      "https://images.unsplash.com/photo-1555949963-aa79dcee981c?auto=format&fit=crop&w=800&q=80",
-  },
-  {
-    id: 3,
-    title: "UI/UX Design Mastery",
-    author: "Sarah Smith",
-    rating: 4.7,
-    price: "$59",
-    image:
-      "https://images.unsplash.com/photo-1581291518857-4e27b48ff24e?auto=format&fit=crop&w=800&q=80",
-  },
-  {
-    id: 4,
-    title: "JavaScript Advanced",
-    author: "David Kim",
-    rating: 4.6,
-    price: "$69",
-    image:
-      "/img/IndexPage/js.jpg",
-  },
-];  
+  useEffect(() => {
+    loadCourses();
+  }, []);
+
+  const loadCourses = async () => {
+    try {
+      setLoading(true);
+      const data = await apiFetch("/api/courses");
+
+      // берём только первые 10–12 для слайдера
+      setCourses(data.slice(0, 10));
+    } catch (error) {
+      console.error("Error loading courses:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const scroll = (dir) => {
     if (!sliderRef.current) return;
@@ -111,42 +92,54 @@ function CoursesSlider() {
           <p>Explore top courses and start learning today</p>
         </div>
 
-        <div className="slider-controls">
-          <button onClick={() => scroll("left")} aria-label="Previous courses">
-            ←
-          </button>
-          <button onClick={() => scroll("right")} aria-label="Next courses">
-            →
-          </button>
-        </div>
+        {loading ? (
+          <p>Loading...</p>
+        ) : (
+          <div className="popular-courses-slider" ref={sliderRef}>
+            {courses.map((course) => (
+              <div className="popular-course-card" key={course.id}>
+                <div className="popular-course-image">
+                  <img
+                    src={
+                      course.image ||
+                      "https://images.unsplash.com/photo-1633356122544-f134324a6cee"
+                    }
+                    alt={course.title}
+                  />
+                </div>
 
-        <div className="popular-courses-slider" ref={sliderRef}>
-  {courses.map((course) => (
-    <div className="popular-course-card" key={course.id}>
-      <div className="popular-course-image">
-        <img src={course.image} alt={course.title} />
-      </div>
+                <div className="popular-course-body">
+                  <h4 className="popular-course-title">{course.title}</h4>
+                  <p className="popular-course-author">
+                    {course.instructorName || "Instructor"}
+                  </p>
 
-      <div className="popular-course-body">
-        <h4 className="popular-course-title">{course.title}</h4>
-        <p className="popular-course-author">{course.author}</p>
+                  <div className="popular-course-rating">
+                    <span className="popular-rating-value">
+                      {course.averageRating || 0}
+                    </span>
+                    <span className="popular-stars">★</span>
+                    <span className="popular-reviews">
+                      ({course.ratingCount || 0})
+                    </span>
+                  </div>
 
-        <div className="popular-course-rating">
-          <span className="popular-rating-value">{course.rating}</span>
-          <span className="popular-stars">★</span>
-          <span className="popular-reviews">(12,540)</span>
-        </div>
+                  <div className="popular-course-price-row">
+                    <span className="popular-price">
+                      {course.price ? `$${course.price}` : "Free"}
+                    </span>
+                  </div>
 
-        <div className="popular-course-price-row">
-          <span className="popular-price">{course.price}</span>
-          <span className="popular-old-price">$89</span>
-        </div>
+                  {course.level && (
+                    <span className="popular-course-badge">{course.level}</span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
-        <span className="popular-course-badge">Bestseller</span>
-      </div>
-    </div>
-  ))}
-</div>
+        {/* arrows можно потом подключить */}
       </div>
     </section>
   );
@@ -169,9 +162,10 @@ function Index() {
             </h1>
 
             <p className="hero-description">
-              Our platform helps students and young professionals learn practical
-              skills through modern online education. Explore courses, connect with
-              mentors, and build your future from anywhere in Kazakhstan.
+              Our platform helps students and young professionals learn
+              practical skills through modern online education. Explore courses,
+              connect with teachers, and build your future from anywhere in
+              Kazakhstan.
             </p>
 
             <div className="hero-search hero-search-modern">
@@ -216,39 +210,39 @@ function Index() {
         </div>
       </section>
 
-       <DiscoverSection />
+      <DiscoverSection />
 
-     <section className="mentor-hero" id="mentors">
-  <div className="container mentor-hero-content">
-    <div className="mentor-hero-left">
-      <span className="badge">Qualified Mentors</span>
+      <section className="mentor-hero" id="mentors">
+        <div className="container mentor-hero-content">
+          <div className="mentor-hero-left">
+            <span className="badge">Qualified Teachers</span>
 
-      <h2>
-        Learn from professionals
-        <br />
-        and experienced mentors
-      </h2>
+            <h2>
+              Learn from professionals
+              <br />
+              and experienced Teachers
+            </h2>
 
-      <p>
-        Get guidance from real experts, understand difficult topics faster,
-        and apply your knowledge in practice with mentor support.
-      </p>
+            <p>
+              Get guidance from real experts, understand difficult topics
+              faster, and apply your knowledge in practice with teacher support.
+            </p>
 
-      <ul className="mentor-hero-list">
-        <li>Personal guidance and feedback</li>
-        <li>Real industry experience</li>
-        <li>Support in difficult topics</li>
-        <li>Faster skill growth</li>
-      </ul>
+            <ul className="mentor-hero-list">
+              <li>Personal guidance and feedback</li>
+              <li>Real industry experience</li>
+              <li>Support in difficult topics</li>
+              <li>Faster skill growth</li>
+            </ul>
 
-      <Link to="/mentors" className="btn btn-primary">
-        Become a Mentor
-      </Link>
-    </div>
-  </div>
-</section>
+            <Link to="/registration" className="btn btn-primary">
+              Become a Teacher
+            </Link>
+          </div>
+        </div>
+      </section>
 
-<CoursesSlider />
+      <CoursesSlider />
 
       <section className="newsletter">
         <div className="container newsletter-box">
@@ -281,11 +275,11 @@ function DiscoverSection() {
           </div>
 
           <div
-  className="discover-top-banner"
-  style={{
-    backgroundImage: 'url("/img/IndexPage/discoverimg.jpg")',
-  }}
-></div>
+            className="discover-top-banner"
+            style={{
+              backgroundImage: 'url("/img/IndexPage/discoverimg.jpg")',
+            }}
+          ></div>
         </div>
 
         <div className="discover-bottom">
