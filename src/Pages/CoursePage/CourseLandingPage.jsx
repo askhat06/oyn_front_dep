@@ -81,16 +81,28 @@ function CourseLandingPage() {
     <div className={styles.sidebar}>
       <img src={course.imageUrl} className={styles.sidebarImage} />
 
-      <div className={styles.price}>Free Course</div>
+      <div className={styles.price}>
+        {course.price != null
+          ? `$${Number(course.price).toFixed(2)}`
+          : "Free Course"}
+      </div>
 
       <button className={styles.enrollBtn} onClick={handleEnrollment}>
         Enroll Now
       </button>
 
       <div>
-        <p>Lessons: {course.lessons?.length}</p>
+        {course.instructorName && <p>Instructor: {course.instructorName}</p>}
+        <p>Lessons: {course.lessons?.length || course.lessonCount || 0}</p>
         <p>Level: {course.level}</p>
         <p>Language: {course.locale}</p>
+        {course.enrollmentCount > 0 && <p>Students: {course.enrollmentCount}+</p>}
+        {course.averageRating != null && (
+          <p>
+            Rating: {course.averageRating.toFixed(1)} / 5
+            {course.ratingCount > 0 && ` (${course.ratingCount} review${course.ratingCount !== 1 ? "s" : ""})`}
+          </p>
+        )}
       </div>
     </div>
   </div>

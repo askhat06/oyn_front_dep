@@ -172,6 +172,17 @@ function LessonViewer() {
   const [progressData, setProgressData] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Refresh presigned video URL every 25 min before the 30-min S3 expiry
+  useEffect(() => {
+    if (!lessonData) return;
+    const interval = setInterval(() => {
+      apiFetch(`/api/courses/${courseSlug}/lessons/${lessonSlug}`)
+        .then((data) => setLessonData(data))
+        .catch(() => {});
+    }, 25 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [courseSlug, lessonSlug, lessonData]);
+
   useEffect(() => {
     async function loadData() {
       try {
@@ -417,7 +428,11 @@ function LessonViewer() {
             <div className="price-card">
               <div className="info-row">
                 <span className="label">Price</span>
-                <span className="value price">$49.00</span>
+                <span className="value price">
+                  {courseData.price != null
+                    ? `$${Number(courseData.price).toFixed(2)}`
+                    : "Free"}
+                </span>
               </div>
               <div className="info-row">
                 <span className="label">Instructor</span>
