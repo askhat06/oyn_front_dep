@@ -576,3 +576,80 @@
     gap: 12px;
     margin-top: 20px;
 }
+
+/* Progress bar on enrolled course cards */
+.progress-bar-track {
+    height: 6px;
+    background: #e5e7eb;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: #4e73df;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+/* Certificates */
+.certificates-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.certificate-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 24px 20px;
+    text-align: center;
+    background: #fafafa;
+}
+
+.certificate-icon {
+    font-size: 36px;
+    margin-bottom: 10px;
+}
+
+.certificate-card h3 {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0 0 6px;
+}
+
+.certificate-label {
+    font-size: 12px;
+    color: #6b7280;
+    margin-bottom: 14px;
+}
+
+/* Settings */
+.settings-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 8px;
+}
+
+.settings-field {
+    border-bottom: 1px solid #f3f4f6;
+    padding-bottom: 14px;
+}
+
+.settings-field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+}
+
+.settings-field p {
+    margin: 0;
+    font-size: 15px;
+    color: #111827;
+}
