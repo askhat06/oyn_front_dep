@@ -15,21 +15,21 @@ function Sidebar({ profile, activeTab, setActiveTab, isTeacher }) {
     return (
         <div className="sidebar">
             <img
-                src={
-                    profile.avatarUrl
-                        ? `/img/IndexPage/${profile.avatarUrl}`
-                        : "/img/IndexPage/default-avatar.jpg"
-                }
-                alt="avatar"
-                className="avatar"
-            />
+    src={
+        profile.avatarUrl
+            ? profile.avatarUrl.startsWith("http")
+                ? profile.avatarUrl
+                : `/img/IndexPage/${profile.avatarUrl}`
+            : "/img/IndexPage/default-avatar.jpg"
+    }
+    alt="avatar"
+    className="avatar"
+/>
 
             <h3>{profile.fullName || profile.username}</h3>
-            <p className="location">Kazakhstan</p>
-            {isTeacher && <span className="lms-role-badge">Professor</span>}
+<p className="location">{profile.location || "No location set"}</p>            {isTeacher && <span className="lms-role-badge">Professor</span>}
 
-            <button className="edit-btn">Edit Profile</button>
-
+<button className="edit-btn" onClick={() => setActiveTab("settings")}>Edit Profile</button>
             <div className="menu">
                 {menu.map(item => (
                     <button

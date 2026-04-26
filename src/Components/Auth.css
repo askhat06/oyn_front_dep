@@ -1,0 +1,240 @@
+/* ── Auth pages shared layout ─────────────────────────────── */
+.auth-page {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.auth-left {
+  flex: 1;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 60px;
+  color: #fff;
+}
+
+.auth-brand {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: 4px;
+  color: #e2b714;
+  margin-bottom: 40px;
+}
+
+.auth-tagline {
+  font-size: 48px;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 20px;
+  color: #fff;
+}
+
+.auth-sub {
+  font-size: 16px;
+  color: #94a3b8;
+  max-width: 340px;
+  line-height: 1.7;
+}
+
+.auth-right {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8fafc;
+}
+
+.auth-form-box {
+  width: 100%;
+  max-width: 420px;
+  padding: 0 40px;
+}
+
+.auth-title {
+  font-size: 32px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 8px;
+}
+
+.auth-subtitle {
+  font-size: 15px;
+  color: #64748b;
+  margin-bottom: 32px;
+}
+
+/* ── Form fields ───────────────────────────────────────────── */
+.auth-field {
+  margin-bottom: 20px;
+}
+
+.auth-field-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.auth-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.auth-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 15px;
+  color: #1e293b;
+  background: #fff;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+  font-family: "Poppins", sans-serif;
+}
+
+.auth-input:focus {
+  border-color: #0f3460;
+}
+
+.auth-input-wrap {
+  position: relative;
+}
+
+.auth-input-wrap .auth-input {
+  padding-right: 40px;
+}
+
+.auth-eye-btn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+/* ── Buttons ───────────────────────────────────────────────── */
+.auth-submit-btn {
+  width: 100%;
+  padding: 13px;
+  background: linear-gradient(135deg, #1a1a2e, #0f3460);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 8px;
+  margin-bottom: 24px;
+  transition: opacity 0.2s;
+  font-family: "Poppins", sans-serif;
+}
+
+.auth-submit-btn:hover {
+  opacity: 0.9;
+}
+
+.auth-submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.auth-forgot-link {
+  font-size: 13px;
+  color: #0f3460;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.auth-forgot-link:hover {
+  text-decoration: underline;
+}
+
+/* ── Bottom text ───────────────────────────────────────────── */
+.auth-bottom-text {
+  text-align: center;
+  font-size: 14px;
+  color: #64748b;
+}
+
+.auth-link {
+  color: #0f3460;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.auth-link:hover {
+  text-decoration: underline;
+}
+
+/* ── Role cards ────────────────────────────────────────────── */
+.auth-role-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fff;
+  cursor: pointer;
+  width: 100%;
+  margin-bottom: 12px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  font-family: "Poppins", sans-serif;
+}
+
+.auth-role-card:hover {
+  border-color: #0f3460;
+  box-shadow: 0 2px 8px rgba(15, 52, 96, 0.1);
+}
+
+.auth-role-emoji {
+  font-size: 28px;
+}
+
+.auth-role-label {
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 15px;
+}
+
+.auth-role-desc {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.auth-role-arrow {
+  margin-left: auto;
+  color: #94a3b8;
+}
+
+/* ── Responsive ────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .auth-page {
+    flex-direction: column;
+  }
+
+  .auth-left {
+    padding: 40px 30px;
+    min-height: auto;
+  }
+
+  .auth-tagline {
+    font-size: 32px;
+  }
+
+  .auth-form-box {
+    padding: 40px 24px;
+  }
+}

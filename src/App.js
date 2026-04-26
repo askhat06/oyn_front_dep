@@ -12,7 +12,8 @@ import RefillBalance from "./Components/RefilBalance";
 import { useSelector, useDispatch } from "react-redux";
 import { setUser } from "./redux/userSlice";
 import { apiFetch } from "./lib/api";
-
+import ForgotPassword from "./Components/ForgotPassword";
+import ResetPassword from "./Components/ResetPassword";
 import CourseCatalog from "./Pages/CoursePage/CourseCatalog";
 import CourseLandingPage from "./Pages/CoursePage/CourseLandingPage";
 import LessonViewer from "./Pages/LessonPage/LessonViewer";
@@ -73,6 +74,8 @@ function App() {
               <Route path="/add-vacancy" element={<AddVacancy />} />
               <Route path="/all-vacancies/:id" element={<Vacancies />} />
               <Route path="/edit" element={<Edit />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+<Route path="/reset-password" element={<ResetPassword />} />
 
               {/* Dashboard */}
               <Route path="/dashboard" element={
