@@ -1,61 +1,45 @@
-# Project Blueprint: eLearning Frontend (OYN / Jiyuu)
+# Project Blueprint: eLearning Frontend (OYAN)
 
 ## Snapshot
 
-- Repository: `oyn_front` (internally initialized as `jiyuu`)
-- Audit date: `2026-04-24`
-- Audit method: code inspection plus repo exploration by a delegated subagent
-- Architectural style: React Single Page Application (SPA) with Context-based domain state and dual-backend integration
-- Current dev environment: `npm start` (react-scripts) running on standard Webpack dev server
-- Upstream Dependencies:
-  - Spring Boot Backend (`http://localhost:7777`): Core eLearning domain (Auth, Courses, Lessons, Teacher LMS)
-  - `json-server` (`http://localhost:3001`): Legacy domain (Gallery, Photoshoots, Vacancies) — no longer mounted in `App.js` but components still exist
+- Repository: `oyn_front_dep`
+- Production: `https://www.oyan.ink`
+- Last blueprint update: `2026-04-27`
+- Architectural style: React SPA with Context-based catalog caching, Redux session, dual-backend integration
+- Build: `npm start` (react-scripts / Webpack)
+- Upstream dependencies:
+  - Spring Boot backend (`https://api.oyan.ink`): Auth, Courses, Lessons, Teacher LMS, Admin, Progress
+  - `json-server` (`localhost:3001`): Legacy domain (Vacancies, Galleries) — still required for legacy routes
 
 ## The Essence
 
-This repository is the React frontend for a Kazakhstan-focused eLearning platform (Orda Skills). It consumes a Spring Boot backend for all core domain logic and retains legacy components for photography/recruitment features.
+OYAN is a Kazakhstan-focused eLearning platform. Current product shape:
 
-Current product shape:
+1. Public visitors see the landing page and About page.
+2. Users register as **Student**, **Teacher**, or **Company** with role-specific fields.
+3. Registration triggers **email verification** — user clicks link, auto-logs in via `/api/auth/verify?token=`.
+4. **Forgot / Reset Password** flow: user requests reset email, clicks link with token, sets new password.
+5. Authenticated students browse the Course Catalog and enroll via inline email form (no forced sign-up).
+6. Enrolled students watch lessons with embedded video (Cloudflare R2 presigned URLs, 30-min expiry).
+7. **Teachers** have a full LMS dashboard: create courses, add lessons (YouTube/Vimeo URL or direct file upload to R2), build assessments, submit for admin review.
+8. **Admin** panel: review pending queue, publish or reject courses with mandatory reason.
+9. **Profile editing**: any authenticated user can update `fullName`, `location`, `avatarUrl` via Settings tab.
+10. JWT flows through `apiFetch` — automatic token injection, 401/403/429 handling globally.
 
-1. Public visitors can view the landing page and the About platform page.
-2. Users can register as **Student**, **Teacher (Professor)**, or **Company** with role-specific form fields.
-3. Registration triggers an **email verification** flow — users land on a verification-pending screen, click the link, and are auto-logged in via `GET /api/auth/verify?token=`.
-4. Authenticated learners can browse the Course Catalog and open course landing pages.
-5. Learners can submit enrollment forms inline on course landing pages (no forced sign-up).
-6. Enrolled students can open lesson viewer pages with embedded HTML5 video playback.
-7. **Teachers** get a full LMS dashboard: create/edit/delete courses, upload video lessons, and create assessments.
-8. JWT auth is handled across the entire app through the centralized `apiFetch` utility.
-9. Legacy company/photographer roles can manage photoshoots and vacancies via the legacy backend.
-
-Primary stack:
-
-- React 19
-- React Router DOM v7
-- Redux Toolkit (for session user + theme state)
-- React Context API (for course catalog caching)
-- React Toastify (for global notifications)
-- Vanilla CSS (`index.css`)
+Primary stack: React 19 · React Router v7 · Redux Toolkit · React Context (catalog) · React Toastify · Vanilla CSS
 
 ## High-Level Architecture
-
-### Architectural Pattern
-
-- `Pages/` contains domain-bounded route components (`CoursePage`, `LessonPage`, `UserPage`, etc.).
-- `Components/` contains globally shared UI elements (`Header`, `Footer`, `Login`, `Registration`).
-- `redux/` contains Redux slices (`userSlice`, `themeSlice`).
-- `lib/api.js` is the **centralized HTTP client** — all Spring Boot API calls go through `apiFetch`.
-- `App.js` is the composition root, mounting Context providers and all routes.
 
 ### UI / Data Flow
 
 ```mermaid
 flowchart LR
-    User["Learner / Teacher"] --> React["React Router (App.js)"]
+    User["Learner / Teacher / Admin"] --> React["React Router (App.js)"]
 
-    React --> Auth["Auth Flow (Login/Registration/VerifyEmail)"]
-    Auth -->|POST credentials| SpringAuth["Spring Boot /api/auth"]
-    SpringAuth -->|email + link| EmailInbox["User's Email Inbox"]
-    EmailInbox -->|click link| VerifyEmail["VerifyEmail.jsx → GET /api/auth/verify"]
+    React --> Auth["Auth Flow\n(Login / Register / ForgotPw / ResetPw / Verify)"]
+    Auth -->|POST credentials| SpringAuth["Spring Boot /api/auth/*"]
+    SpringAuth -->|email link| Email["User's Email"]
+    Email -->|click| VerifyOrReset["VerifyEmail / ResetPassword"]
     SpringAuth -->|JWT| LocalStorage[(localStorage)]
 
     React --> Course["Course Flow (Catalog, Landing, Lesson)"]
@@ -63,229 +47,227 @@ flowchart LR
     CourseContext -->|GET| SpringCourse["Spring Boot /api/courses"]
     Course -->|POST| SpringEnroll["Spring Boot /api/enrollments"]
 
-    React --> TeacherLMS["Teacher LMS Dashboard"]
+    React --> Dashboard["User Dashboard (/dashboard)"]
+    Dashboard --> Settings["Settings → PUT /api/auth/me"]
+    Dashboard --> TeacherLMS["Teacher LMS"]
     TeacherLMS -->|CRUD| TeacherAPI["Spring Boot /api/teacher/courses/*"]
+    TeacherLMS -->|"PUT (XHR)"| R2["Cloudflare R2\n(presigned upload)"]
 
-    React --> Legacy["Legacy Flow (Company/Vacancies)"]
-    Legacy -->|GET/POST| JsonServer["json-server :3001"]
-
-    Course -.throws.-> Toast["React Toastify (Notifications)"]
-    Auth -.throws.-> Toast
-    TeacherLMS -.throws.-> Toast
+    React --> Admin["Admin Panel (/admin)"]
+    Admin -->|GET/POST| AdminAPI["Spring Boot /api/admin/courses/*"]
 
     LocalStorage -->|Bearer Token| apiFetch["apiFetch (lib/api.js)"]
-    apiFetch -->|injects Authorization header| SpringAuth
-```
-
-### Component Hierarchy Model
-
-```mermaid
-erDiagram
-    APP ||--o{ CONTEXT_PROVIDER : configures
-    APP ||--o{ BROWSER_ROUTER : mounts
-    BROWSER_ROUTER ||--o{ ROUTE : defines
-
-    ROUTE ||--o| COURSE_CATALOG : renders
-    ROUTE ||--o| COURSE_LANDING_PAGE : renders
-    ROUTE ||--o| LESSON_VIEWER : renders
-    ROUTE ||--o| VERIFY_EMAIL : renders
-    ROUTE ||--o| ABOUT_PLATFORM : renders
-    ROUTE ||--o| USER_PAGE : renders
-
-    USER_PAGE ||--o| SIDEBAR : contains
-    USER_PAGE ||--o| TEACHER_DASHBOARD : "if role=professor"
-    USER_PAGE ||--o| STUDENT_ENROLLMENTS : "if role=student"
-
-    TEACHER_DASHBOARD ||--o| TEACHER_MY_COURSES : tab
-    TEACHER_DASHBOARD ||--o| TEACHER_UPLOAD_VIDEO : tab
-    TEACHER_DASHBOARD ||--o| TEACHER_CREATE_ASSESSMENT : tab
-
-    COURSE_LANDING_PAGE ||--o| ENROLLMENT_FORM : contains
-    LESSON_VIEWER ||--o| HTML5_VIDEO : contains
-
-    CONTEXT_PROVIDER {
-        AuthContext empty-shell
-        CourseContext courses
-    }
+    apiFetch -.->|"injects Authorization\n(NOT to R2 upload)"| SpringAuth
 ```
 
 ## Route & API Surface
 
-| Route Path | React Component | Backing API Integrations | Purpose |
+| Route Path | React Component | Backing API | Purpose |
 | --- | --- | --- | --- |
-| `/login` | `Login.jsx` | `POST 7777/api/auth/login`, `GET 7777/api/auth/me` | Exchange credentials for JWT & populate Redux |
-| `/registration` | `Registration.jsx` | `POST 7777/api/auth/register` | Role-selection (Student/Teacher/Company) + create account |
-| `/verify-email` | `VerifyEmail.jsx` | `GET 7777/api/auth/verify?token=` | Email verification link handler; auto-logs in on success |
+| `/login` | `Login.jsx` | `POST /api/auth/login` | Exchange credentials for JWT |
+| `/registration` | `Registration.jsx` | `POST /api/auth/register` | Role-selection + create account |
+| `/forgot-password` | `ForgotPassword.jsx` | `POST /api/auth/forgot-password` | Request password reset email |
+| `/reset-password` | `ResetPassword.jsx` | `POST /api/auth/reset-password` | Set new password via `?token=` |
+| `/verify-email` | `VerifyEmail.jsx` | `GET /api/auth/verify?token=` | Auto-login after email verification |
 | `/` | `IndexPage.jsx` | static | Landing page |
-| `/about` | `AboutPlatform.jsx` | static | Platform marketing page (stats, mission, testimonials) |
-| `/courses` | `CourseCatalog.jsx` | `GET 7777/api/courses` | Grid display of available courses |
-| `/courses/:slug` | `CourseLandingPage.jsx` | `GET 7777/api/courses/{slug}`, `POST 7777/api/enrollments` | Course detail and inline enrollment |
-| `/courses/:courseSlug/lessons/:lessonSlug` | `LessonViewer.jsx` | `GET 7777/api/courses/{courseSlug}/lessons/{lessonSlug}` | Video playback and lesson metadata |
-| `/profile/:role/:id` | `ProfileSwitch.jsx` | varies by role | Legacy role-based profile switcher |
-| `/refill-balance/:id` | `RefillBalance.jsx` | legacy | Legacy balance refill (company domain) |
-| `/add-vacancy` | `AddVacancy.jsx` | `3001/vacancies` | Legacy vacancy creation |
-| `/all-vacancies/:id` | `Vacancies.jsx` | `3001/vacancies` | Legacy vacancy listing |
-| `/edit` | `Edit.jsx` | legacy | Legacy profile edit |
+| `/about` | `AboutPlatform.jsx` | static | Platform marketing page |
+| `/courses` | `CourseCatalog.jsx` | `GET /api/courses` | Grid of published courses |
+| `/courses/:slug` | `CourseLandingPage.jsx` | `GET /api/courses/{slug}`, `POST /api/enrollments` | Course detail + enrollment |
+| `/courses/:courseSlug/lessons/:lessonSlug` | `LessonViewer.jsx` | `GET /api/courses/{cSlug}/lessons/{lSlug}` | Video playback + progress |
+| `/dashboard` | `UserProfile.jsx` | `GET /api/auth/me`, `GET /api/enrollments` | Student/Teacher/Admin dashboard |
+| `/admin` | `AdminPage.jsx` | `GET /api/admin/courses/*` | Course moderation panel |
 
-### Teacher-Only API Routes (via `apiFetch`)
+### Teacher API (all require ROLE_TEACHER)
 
-| Method | Endpoint | Purpose |
+| Method | Endpoint | Body / Notes |
 | --- | --- | --- |
-| `GET` | `/api/teacher/courses` | List own courses (with status, lesson count) |
-| `POST` | `/api/teacher/courses` | Create a new course (title, subtitle, description, locale, level, durationHours, price) |
-| `PUT` | `/api/teacher/courses/:slug` | Edit course metadata (DRAFT or REJECTED only) |
-| `DELETE` | `/api/teacher/courses/:slug` | Delete a DRAFT course |
-| `POST` | `/api/teacher/courses/:slug/publish` | Submit course for admin review → PENDING_REVIEW |
-| `POST` | `/api/teacher/courses/:slug/withdraw` | Pull course back from review → DRAFT |
-| `GET` | `/api/teacher/courses/:slug/lessons` | List lessons for a course |
-| `POST` | `/api/teacher/courses/:slug/lessons` | Add a video lesson (videoUrl, title, summary, durationMinutes) |
+| `GET` | `/api/teacher/courses` | List own courses |
+| `POST` | `/api/teacher/courses` | `{ title, subtitle, description, locale, level, durationHours, price? }` |
+| `PUT` | `/api/teacher/courses/:slug` | Same shape; DRAFT or REJECTED only |
+| `DELETE` | `/api/teacher/courses/:slug` | DRAFT only |
+| `POST` | `/api/teacher/courses/:slug/submit` | → PENDING_REVIEW |
+| `POST` | `/api/teacher/courses/:slug/withdraw` | → DRAFT |
+| `GET` | `/api/teacher/courses/:slug/lessons` | Ordered lesson list |
+| `POST` | `/api/teacher/courses/:slug/lessons` | `{ title, summary, content, videoUrl?, durationMinutes }` |
+| `PUT` | `/api/teacher/courses/:slug/lessons/:lSlug` | Same shape |
+| `DELETE` | `/api/teacher/courses/:slug/lessons/:lSlug` | 204 |
+| `POST` | `/api/teacher/courses/:slug/lessons/:lSlug/video-upload` | `{ fileName, contentType, sizeBytes }` → `{ uploadUrl, objectKey, requiredHeaders, expiresAt }` |
+| `POST` | `/api/teacher/courses/:slug/lessons/:lSlug/video-upload/complete` | `{ objectKey }` → 204 |
+| `DELETE` | `/api/teacher/courses/:slug/lessons/:lSlug/video` | 204 |
+
+### Profile API
+
+| Method | Endpoint | Body / Notes |
+| --- | --- | --- |
+| `GET` | `/api/auth/me` | Returns current user (email, fullName, role, location, avatarUrl) |
+| `PUT` | `/api/auth/me` | `{ fullName, location, avatarUrl }` — email and role are immutable |
 
 ## High-Signal File Map
 
 ### Build, Bootstrap, and Config
 
-| Path | Responsibility | Why it matters |
-| --- | --- | --- |
-| `package.json` | Dependencies and Scripts | Defines `react-scripts`, `react-router-dom` v7. |
-| `src/index.js` | React mounting point | Wires `react-redux` Provider to the DOM root. |
-| `src/App.js` | Master Router and Provider tree | Session hydration + course list fetch on mount; maps all URL paths. |
-| `src/lib/api.js` | Centralized HTTP client | `apiFetch` — injects Bearer token, handles 401/403/429/204 globally. The single correct way to call the Spring Boot API. |
-| `src/index.css` | Global styling | Monolith vanilla CSS handling `.course-card`, `.lms-*`, `.dashboard`, `.sidebar`, etc. |
+| Path | Responsibility |
+| --- | --- |
+| `src/index.js` | React mounting point; wraps app in Redux Provider |
+| `src/App.js` | Master router; mounts CourseContext + all routes; hydrates session via `GET /api/auth/me` on load |
+| `src/lib/api.js` | `apiFetch` — single HTTP boundary for all Spring Boot calls; injects Bearer, handles 401/403/429/204 |
+| `src/index.css` | Global monolith CSS (legacy + shared) |
+| `src/Components/Auth.css` | Shared styles for all auth pages (Login, Registration, ForgotPassword, ResetPassword) |
 
-### Core Learner Flow
+### Auth Flow
 
-| Path | Responsibility | Why it matters |
-| --- | --- | --- |
-| `src/Components/Login.jsx` | JWT auth acquisition | Single point of token generation and Redux `setUser` dispatch. |
-| `src/Components/Registration.jsx` | Role-based account creation | Role-selection card UI; maps to backend enum (`student→STUDENT`, `professor→TEACHER`). Handles email-verification-pending state. |
-| `src/Pages/VerifyEmailPage/VerifyEmail.jsx` | Email verification | Reads `?token=` param, calls `/api/auth/verify`, stores token, dispatches `setUser`, navigates to `/`. |
-| `src/Pages/CoursePage/CourseCatalog.jsx` | Dynamic catalog UI | Pulls from `CourseContext` to render course cards. |
-| `src/Pages/CoursePage/CourseLandingPage.jsx` | Course detail + enrollment | Bridges public viewing to backend enrollment creation via inline email form. |
-| `src/Pages/LessonPage/LessonViewer.jsx` | Media consumption | Resolves `videoUrl` from the Spring Boot lesson payload for playback. |
+| Path | Responsibility |
+| --- | --- |
+| `src/Components/Login.jsx` | Credentials form → `setUser` dispatch on success |
+| `src/Components/Registration.jsx` | Role-selection + account creation; shows "check your email" on 201 without token |
+| `src/Components/ForgotPassword.jsx` | Email input → `POST /api/auth/forgot-password` |
+| `src/Components/ResetPassword.jsx` | New password form; reads `?token=` from URL → `POST /api/auth/reset-password` |
+| `src/Pages/VerifyEmailPage/VerifyEmail.jsx` | Reads `?token=`, calls `/api/auth/verify`, stores JWT, dispatches `setUser` |
+
+### User Dashboard
+
+| Path | Responsibility |
+| --- | --- |
+| `src/Pages/UserPage/UserProfile.jsx` | Dashboard root; fetches profile + enrollments; routes to teacher or student view by role |
+| `src/Pages/UserPage/UserPage.css` | Dashboard layout, sidebar styles (`.sidebar-*`), course cards, LMS teacher panel (`.lms-*`) |
+| `src/Pages/UserPage/ui/sidebar.jsx` | Gradient dark sidebar; avatar with initials fallback; `resolveAvatarSrc` for http/relative URLs; icons in nav |
+| `src/Pages/UserPage/ui/Settings.jsx` | View/edit toggle; `PUT /api/auth/me` on save; `onSaved` callback updates sidebar profile |
+| `src/Pages/UserPage/ui/certificates.jsx` | Student certificates tab |
 
 ### Teacher LMS Subsystem
 
-| Path | Responsibility | Why it matters |
-| --- | --- | --- |
-| `src/Pages/UserPage/UserProfile.jsx` | Profile + dashboard root | Detects `role === "professor"` from Redux; routes to `TeacherDashboard` or student enrollment list accordingly. |
-| `src/Pages/UserPage/ui/sidebar.jsx` | Role-aware navigation | Students see [My Courses, Certificates, Settings]; teachers see [Manage Courses, Settings]. |
-| `src/Pages/UserPage/ui/TeacherDashboard.jsx` | LMS shell | Tab container: My Courses / Upload Video / Create Assessment. |
-| `src/Pages/UserPage/ui/TeacherMyCourses.jsx` | Course CRUD UI | Full lifecycle: create → edit → publish → withdraw → delete. Inline lesson viewer with video and assessment tabs. |
-| `src/Pages/UserPage/ui/TeacherUploadVideo.jsx` | Lesson upload | YouTube/Vimeo URL + duration form; live embed preview before submission. |
-| `src/Pages/UserPage/ui/TeacherCreateAssessment.jsx` | Assessment creation | Creates assessment-type lessons attached to a course. |
+| Path | Responsibility |
+| --- | --- |
+| `src/Pages/UserPage/ui/TeacherDashboard.jsx` | Tab container: My Courses / Upload Video / Create Assessment |
+| `src/Pages/UserPage/ui/TeacherMyCourses.jsx` | Full course CRUD; lesson list with video/assessment tabs; submit/withdraw/delete actions |
+| `src/Pages/UserPage/ui/TeacherUploadVideo.jsx` | **Two modes:** (1) YouTube/Vimeo URL, (2) file upload — 4-step R2 presigned flow with XHR progress bar |
+| `src/Pages/UserPage/ui/TeacherCreateAssessment.jsx` | Multiple-choice quiz builder; serializes to JSON stored in lesson `content` field |
 
-### Legacy Subsystems
+### Course & Lesson Flow
 
-| Path | Responsibility | Why it matters |
-| --- | --- | --- |
-| `server.json` | Mock DB Schema | Powers `json-server` for legacy domain (galleries, vacancies). |
-| `express.js` | Legacy media wrapper | Port 4000 upload handler for legacy photoshoot components. |
-| `src/Pages/CompanyPage/` | Company domain | Visualizes and mutates port 3001 resources, fully detached from the eLearning context. |
+| Path | Responsibility |
+| --- | --- |
+| `src/Pages/CoursePage/CourseCatalog.jsx` | Consumes `CourseContext`; renders course cards |
+| `src/Pages/CoursePage/CourseLandingPage.jsx` | Course detail; anonymous enrollment form; handles 409 / 429 |
+| `src/Pages/LessonPage/LessonViewer.jsx` | Plays lesson video from presigned R2 URL; re-fetches before 30-min expiry; tracks progress |
 
-## Core Business Logic Explained
+## Core Business Logic
 
 ### 1. Centralized API Client (`apiFetch`)
 
-All Spring Boot calls go through `src/lib/api.js`. It:
-- Reads the base URL from `process.env.REACT_APP_SPRING_API` (fallback: `http://localhost:7777`).
-- Automatically injects `Authorization: Bearer <token>` from `localStorage`.
-- On **401**: clears the token and redirects to `/login`.
-- On **403**: reads the error body and throws a typed error with `.status = 403`.
-- On **429**: throws a rate-limit error.
-- On **204**: returns `null` cleanly.
+All Spring Boot calls go through `src/lib/api.js`:
+- Reads base URL from `REACT_APP_SPRING_API`
+- Injects `Authorization: Bearer <token>` from localStorage
+- `401` → clear token + redirect to `/login`
+- `403` → throw with `.status = 403`
+- `429` → throw rate-limit error
+- `204` → return `null`
 
-This was previously a documented risk ("Missing Centralized Fetch Interceptors") — it is now resolved.
+**Never** add the Bearer header when uploading to Cloudflare R2 — presigned URLs are self-authenticating.
 
-### 2. Email Verification Flow
+### 2. Video Upload Flow (Cloudflare R2)
 
-When a user registers and the backend does not immediately return an `accessToken`, `Registration.jsx` sets `awaitingVerification = true` and renders a "Check your email" screen. The user clicks the link in their inbox, which hits `/verify-email?token=...`. `VerifyEmail.jsx` calls `GET /api/auth/verify`, stores the JWT, dispatches `setUser`, and navigates to `/`.
-
-### 3. Role-Based Dashboard
-
-`UserProfile.jsx` reads `user.role` from Redux. If `role === "professor"`, it renders `TeacherDashboard`. Otherwise it renders the student's enrolled course list fetched from `GET /api/enrollments?email=<user.email>`.
-
-### 4. Teacher Course Lifecycle
-
-Courses move through backend-enforced states:
 ```
-DRAFT → (publish) → PENDING_REVIEW → (admin approve) → PUBLISHED
-                                    → (admin reject)  → REJECTED
-PENDING_REVIEW → (withdraw) → DRAFT
+Teacher picks file (mp4/webm, ≤512MB)
+  ↓
+POST /lessons           → create lesson → lessonSlug
+  ↓
+POST /video-upload      → { uploadUrl, objectKey, requiredHeaders: { "Content-Type": "video/mp4" } }
+  ↓
+XHR PUT {uploadUrl}     → send file with Content-Type from requiredHeaders (not user input)
+  (onprogress → update progress bar)
+  ↓
+POST /video-upload/complete  → { objectKey } → 204
+  ↓
+lesson.hasVideo = true, lesson.videoUrl = presigned GET URL
 ```
-Teachers can only edit/delete in DRAFT or REJECTED state. They cannot publish a course with zero lessons.
 
-### 5. Lead-Shell Enrollment
+R2 CORS must allow `PUT` from `https://www.oyan.ink` with `Content-Type` header.
 
-`CourseLandingPage.jsx` embeds a standalone email form. `POST /api/enrollments` accepts just an email, creating an anonymous "lead-shell" user on the backend. This bypasses forced registration for low-friction funnel conversion.
+### 3. Profile Edit Flow
 
-### 6. JWT Client-Side Delegation
+```
+Settings tab → "Edit Profile" button
+  ↓ editing = true (inputs appear)
+User edits fullName / location / avatarUrl
+  ↓
+PUT /api/auth/me  → updated user object
+  ↓
+dispatch(setUser(updated))     → Redux + localStorage
+onSaved(updated)               → UserProfile.setProfile() → sidebar re-renders
+```
 
-The JWT is stored in `localStorage` by `Login.jsx` and `VerifyEmail.jsx`. `apiFetch` reads it automatically on every request. A 401 response clears it and redirects to `/login`.
+### 4. Role-Based Dashboard
 
-### 7. Context vs. Redux Duties
+`UserProfile.jsx` reads `user.role` from Redux:
+- `professor` → renders `TeacherDashboard`
+- `student` / `admin` / `company` → renders enrolled course list
 
-- **Redux** (`userSlice`, `themeSlice`): active session user + UI theme toggle.
-- **CourseContext** (in `App.js`): course catalog fetched once on mount, shared across `CourseCatalog` and `CourseLandingPage` to avoid redundant network calls.
-- Legacy contexts (`GalleryContext`, `PhotoshootsContext`) that previously over-fetched on `App.js` mount have been **removed**. Legacy data now fetches on demand within legacy components.
+`user.role` is normalized by `userSlice.normalizeUser`: `TEACHER → professor`, `STUDENT/USER → student`.
 
-## Infrastructure and Environment
+### 5. Teacher Course Lifecycle
 
-### Delivery and Tooling
+```
+DRAFT → [submit] → PENDING_REVIEW → [admin approve] → PUBLISHED
+                                  → [admin reject]  → REJECTED
+PENDING_REVIEW → [withdraw] → DRAFT
+REJECTED → [edit] → DRAFT
+```
 
-- `npm start` fires Webpack on port `3000`.
-- Spring Boot backend must be running on port `7777`.
-- `json-server` must be started separately only if legacy gallery/vacancy components are needed.
-- Base URLs are configurable via `.env`:
-  - `REACT_APP_SPRING_API=http://localhost:7777`
-  - `REACT_APP_LEGACY_API=http://localhost:3001`
-- No CI/CD pipelines or Dockerfiles exist in the repo.
+- Teachers can only edit/delete in DRAFT or REJECTED
+- Cannot submit with zero lessons
+- Admin rejection requires a mandatory reason (shown in `TeacherMyCourses`)
+
+### 6. Lesson Type Detection (frontend-side)
+
+The backend stores a single `content` field. The frontend infers lesson type:
+- **Video lesson**: `lesson.hasVideo === true` or `lesson.videoUrl` is set
+- **Assessment**: `JSON.parse(lesson.content)` succeeds (content is `{ type: "assessment", questions: [...] }`)
+
+### 7. Avatar URL Resolution (`resolveAvatarSrc`)
+
+```js
+function resolveAvatarSrc(avatarUrl) {
+    if (!avatarUrl) return null;
+    return avatarUrl.startsWith("http") ? avatarUrl : `/img/IndexPage/${avatarUrl}`;
+}
+```
+
+If no avatar: sidebar shows initials (first 2 letters of name) on an indigo gradient background.
 
 ## Current State vs. Previous Blueprint
 
 | Previous Risk / Recommendation | Status |
 | --- | --- |
-| Missing centralized fetch interceptors | **RESOLVED** — `src/lib/api.js` (`apiFetch`) |
-| Hardcoded upstream URLs | **RESOLVED** — `apiFetch` reads `REACT_APP_SPRING_API` env var |
-| `App.js` mount over-fetching legacy contexts | **RESOLVED** — legacy contexts removed from `App.js` |
-| Migrate legacy json-server into Spring Boot or remove | **STILL PENDING** |
-| Email verification flow | **IMPLEMENTED** — `VerifyEmail.jsx` + `Registration.jsx` awaiting-state |
+| Missing centralized fetch interceptors | **RESOLVED** — `apiFetch` in `src/lib/api.js` |
+| Hardcoded upstream URLs | **RESOLVED** — `REACT_APP_SPRING_API` env var |
+| App.js mount over-fetching legacy contexts | **RESOLVED** — legacy contexts removed |
+| `/dashboard` route missing from App.js | **RESOLVED** — route exists, renders `UserProfile` |
+| Settings.jsx was a stub ("coming soon") | **RESOLVED** — full view/edit form with `PUT /api/auth/me` |
+| Certificates.jsx was a stub | **RESOLVED** — certificates tab functional |
+| TeacherUploadVideo only supported URLs | **RESOLVED** — file upload with R2 presigned flow + progress bar |
+| No forgot/reset password flow | **RESOLVED** — `ForgotPassword.jsx` + `ResetPassword.jsx` |
+| Sidebar hardcoded "Kazakhstan" location | **RESOLVED** — reads `profile.location` from API |
+| Browser tab title was "Photo Cart" | **RESOLVED** — now "OYAN Platform" |
+| Migrate legacy json-server to Spring Boot | **STILL PENDING** |
+| Course progress tracking in LessonViewer | **IMPLEMENTED** — `PUT current-step` + `POST complete` |
 
 ## Remaining Technical Risks
 
-1. **`UserPage` has no route in `App.js`**
-   `UserPage.jsx` and `UserProfile.jsx` exist and are fully implemented, but no route in `App.js` renders them. The current path `/profile/:role/:id` points to `ProfileSwitch`. This must be resolved to expose the Teacher LMS and student dashboard.
+1. **Legacy json-server still load-bearing** — Company and vacancy features depend on `json-server :3001`. Removing or migrating these is the last step to a single-backend architecture.
 
-2. **Stub tabs in student sidebar**
-   The sidebar lists `Certificates` and `Settings` for students, but `certificates.jsx` and `Settings.jsx` may be incomplete stubs. These should be verified before the route is made navigable.
+2. **`PUT /api/auth/me` not yet on backend** — The profile edit endpoint was implemented on the frontend but the backend returns 500. Backend needs to implement the endpoint (see Backend_BluePrint.md).
 
-3. **Course progress tracking not yet wired**
-   The Spring Boot backend has authenticated progress tracking endpoints (per the backend blueprint). The frontend has no progress-update calls in `LessonViewer.jsx`.
+3. **`POST /api/teacher/courses/:slug/lessons` returns 400** — DTO field name mismatch between frontend (`summary`, `content`) and backend. Backend needs to align its `LessonCreateRequest` DTO.
 
-4. **CourseStars rating component**
-   `src/Components/RefilBalance.jsx` and a `CourseStars` component were added but their integration into `CourseLandingPage` or `LessonViewer` needs verification.
-
-5. **Legacy json-server still load-bearing**
-   Company and vacancy features depend on `json-server :3001`. Removing or migrating these is the last step to a single-backend architecture.
-
-## Recommended Next Engineering Steps
-
-1. **Add a `/dashboard` or `/user` route** in `App.js` that renders `UserPage` — this is blocked on nothing and unlocks the entire teacher and student dashboard flow.
-2. **Wire lesson progress tracking** — call `POST /api/progress/{courseSlug}/{lessonSlug}/complete` from `LessonViewer.jsx` when a lesson finishes.
-3. **Verify and complete stub tabs** — audit `certificates.jsx` and `Settings.jsx` to confirm they are usable or mark them as coming-soon.
-4. **Finalize the legacy domain** — either migrate vacancies/gallery data into Spring Boot or remove those routes to eliminate the `json-server` dependency entirely.
+4. **stub components** — `userCourses.jsx` and `wishlist.jsx` are unused stubs. Safe to delete or implement.
 
 ## Short Instruction For Future AI Developers
 
-Use `App.js` routes and `src/lib/api.js` as the source of truth.
-
-Before changing behavior:
-
-1. **All Spring Boot API calls must go through `apiFetch`** in `src/lib/api.js` — never call `fetch` directly for the `7777` backend.
-2. Check `App.js` to see if the data you need is already cached in `CourseContext`.
-3. Check `Login.jsx` and `VerifyEmail.jsx` for the standard JWT storage and Redux dispatch pattern.
-4. Check `UserProfile.jsx` for the role-detection pattern (`user.role === "professor"`).
-5. Use `react-toastify` (`toast.success` / `toast.error`) for all user-facing feedback.
-6. The teacher API lives under `/api/teacher/courses/*` — it is ownership-gated on the backend.
-
-If you only remember one mental model:
-- This is a React SPA with `apiFetch` as the single HTTP boundary, `CourseContext` for catalog caching, Redux for session state, and a role-aware dashboard that branches between a teacher LMS and a student enrollment view.
+1. **All Spring Boot API calls must go through `apiFetch`** in `src/lib/api.js`. Never call `fetch` directly for the Spring Boot backend.
+2. **R2 uploads are the exception** — use `XMLHttpRequest` with no auth header when uploading to the presigned URL.
+3. **Role normalization** — the backend sends `TEACHER`, the frontend stores `professor`. Always compare against the normalized lowercase form.
+4. **After `PUT /api/auth/me`** — dispatch `setUser(updated)` AND call `onSaved(updated)` to update the sidebar profile state. Both are needed.
+5. **Video URL in LessonViewer is presigned** — expires in 30 minutes. Do not cache or share it. Re-fetch the lesson to get a fresh URL.
+6. Use `react-toastify` (`toast.success` / `toast.error`) for all user-facing feedback.
+7. The teacher API lives under `/api/teacher/courses/*` and is ownership-gated on the backend. A teacher gets `403` if they try to modify another teacher's course.
