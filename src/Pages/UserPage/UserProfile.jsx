@@ -58,46 +58,55 @@ function UserProfile() {
 
                 {/* Student enrolled courses */}
                 {!isTeacher && activeTab === "courses" && (
-                    <div className="courses-grid">
-                        {enrollments.length === 0 && (
-                            <p>You have no enrolled courses yet.</p>
-                        )}
-                        {enrollments.map((enrollment) => {
-                            const progress = progressMap[enrollment.courseSlug];
-                            return (
-                                <div key={enrollment.enrollmentId} className="course-card">
-                                    <div className="course-info">
-                                        <h3>{enrollment.courseTitle}</h3>
-                                        <p className="author">{enrollment.courseSlug}</p>
-                                        <span className={`tag status-${enrollment.status?.toLowerCase()}`}>
-                                            {enrollment.status}
-                                        </span>
-                                        {progress && (
-                                            <div style={{ marginTop: 8 }}>
-                                                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 4 }}>
-                                                    <span>{progress.completedSteps}/{progress.totalSteps} lessons</span>
-                                                    <span>{progress.percentComplete}%</span>
-                                                </div>
-                                                <div className="progress-bar-track">
-                                                    <div
-                                                        className="progress-bar-fill"
-                                                        style={{ width: `${progress.percentComplete}%` }}
-                                                    />
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
+                    <>
+                        <div className="content-header">
+                            <h1>My Learning</h1>
+                            <p>{enrollments.length} enrolled course{enrollments.length !== 1 ? "s" : ""}</p>
+                        </div>
+                        <div className="courses-grid">
+                            {enrollments.length === 0 && (
+                                <div className="empty-state">
+                                    <div className="empty-state-icon">📚</div>
+                                    <h3>No courses yet</h3>
+                                    <p>Browse the catalog and enroll in your first course</p>
                                 </div>
-                            );
-                        })}
-                    </div>
+                            )}
+                            {enrollments.map((enrollment) => {
+                                const progress = progressMap[enrollment.courseSlug];
+                                return (
+                                    <div key={enrollment.enrollmentId} className="course-card">
+                                        <div className="course-info">
+                                            <h3>{enrollment.courseTitle}</h3>
+                                            <span className={`tag status-${enrollment.status?.toLowerCase()}`}>
+                                                {enrollment.status}
+                                            </span>
+                                            {progress && (
+                                                <div style={{ marginTop: 10 }}>
+                                                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#64748b", marginBottom: 6 }}>
+                                                        <span>{progress.completedSteps}/{progress.totalSteps} lessons</span>
+                                                        <span style={{ fontWeight: 600, color: "#6366f1" }}>{progress.percentComplete}%</span>
+                                                    </div>
+                                                    <div className="progress-bar-track">
+                                                        <div
+                                                            className="progress-bar-fill"
+                                                            style={{ width: `${progress.percentComplete}%` }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </>
                 )}
 
                 {/* Certificates */}
                 {activeTab === "certificates" && <Certificates />}
 
                 {/* Settings — available to all roles */}
-                {activeTab === "settings" && <Settings />}
+                {activeTab === "settings" && <Settings onSaved={(updated) => setProfile(updated)} />}
             </div>
         </div>
     );

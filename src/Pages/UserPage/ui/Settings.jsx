@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useSelector, useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { apiFetch } from "../../../lib/api";
 import { setUser } from "../../../redux/userSlice";
 
@@ -10,48 +10,50 @@ const ROLE_LABELS = {
     admin: "Admin",
 };
 
-function Settings() {
-    const user = useSelector((state) => state.user.user);
+function Settings({ onSaved }) {
     const dispatch = useDispatch();
+    const user = useSelector((state) => state.user.user);
 
     const [editing, setEditing] = useState(false);
     const [fullName, setFullName] = useState(user?.fullName || "");
     const [location, setLocation] = useState(user?.location || "");
     const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || "");
-    const [loading, setLoading] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState(null);
     const [success, setSuccess] = useState(false);
-    const [error, setError] = useState("");
 
     if (!user) return null;
 
     const roleLabel = ROLE_LABELS[user.role] ?? user.role;
 
-    const handleSave = async () => {
-        setLoading(true);
-        setError("");
+    function handleCancel() {
+        setEditing(false);
+        setFullName(user?.fullName || "");
+        setLocation(user?.location || "");
+        setAvatarUrl(user?.avatarUrl || "");
+        setError(null);
+        setSuccess(false);
+    }
+
+    async function handleSave() {
+        setSaving(true);
+        setError(null);
         setSuccess(false);
         try {
             const updated = await apiFetch("/api/auth/me", {
                 method: "PUT",
-                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ fullName, location, avatarUrl }),
             });
-            dispatch(setUser({
-                ...user,
-                fullName: updated.fullName || fullName,
-                location: updated.location || location,
-                avatarUrl: updated.avatarUrl || avatarUrl,
-            }));
+            dispatch(setUser(updated));
+            if (onSaved) onSaved(updated);
             setSuccess(true);
             setEditing(false);
         } catch (e) {
             setError("Failed to save. Please try again.");
         } finally {
-            setLoading(false);
+            setSaving(false);
         }
-    };
-
-    const inputStyle = { padding: "6px 10px", borderRadius: 6, border: "1px solid #ccc", fontSize: 14, width: "100%" };
+    }
 
     return (
         <div className="lms-panel">
@@ -60,31 +62,53 @@ function Settings() {
 
             <div className="settings-fields">
                 <div className="settings-field">
-                    <label>Full Name</label>
+                    <label>FULL NAME</label>
                     {editing ? (
-                        <input value={fullName} onChange={(e) => setFullName(e.target.value)} style={inputStyle} />
+                        <div className="lms-field" style={{ margin: 0 }}>
+                            <input
+                                value={fullName}
+                                onChange={(e) => setFullName(e.target.value)}
+                                placeholder="Your full name"
+                            />
+                        </div>
                     ) : (
                         <p>{user.fullName || "—"}</p>
                     )}
                 </div>
 
                 <div className="settings-field">
-                    <label>Location</label>
+                    <label>LOCATION</label>
                     {editing ? (
-                        <input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="e.g. Almaty, Kazakhstan" style={inputStyle} />
+                        <div className="lms-field" style={{ margin: 0 }}>
+                            <input
+                                value={location}
+                                onChange={(e) => setLocation(e.target.value)}
+                                placeholder="e.g. Almaty, Kazakhstan"
+                            />
+                        </div>
                     ) : (
                         <p>{user.location || "—"}</p>
                     )}
                 </div>
 
                 <div className="settings-field">
-                    <label>Avatar URL</label>
+                    <label>AVATAR URL</label>
                     {editing ? (
-                        <input value={avatarUrl} onChange={(e) => setAvatarUrl(e.target.value)} placeholder="https://..." style={inputStyle} />
+                        <div className="lms-field" style={{ margin: 0 }}>
+                            <input
+                                value={avatarUrl}
+                                onChange={(e) => setAvatarUrl(e.target.value)}
+                                placeholder="https://..."
+                            />
+                        </div>
                     ) : (
                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                             {user.avatarUrl ? (
-                                <img src={user.avatarUrl} alt="avatar" style={{ width: 48, height: 48, borderRadius: "50%", objectFit: "cover" }} />
+                                <img
+                                    src={user.avatarUrl}
+                                    alt="avatar"
+                                    style={{ width: 48, height: 48, borderRadius: "50%", objectFit: "cover" }}
+                                />
                             ) : (
                                 <p>—</p>
                             )}
@@ -93,35 +117,34 @@ function Settings() {
                 </div>
 
                 <div className="settings-field">
-                    <label>Email</label>
+                    <label>EMAIL</label>
                     <p>{user.email || "—"}</p>
                 </div>
 
                 <div className="settings-field">
-                    <label>Role</label>
+                    <label>ROLE</label>
                     <p>{roleLabel}</p>
                 </div>
             </div>
 
-            {success && <p style={{ color: "green", marginTop: 12 }}>Saved successfully!</p>}
-            {error && <p style={{ color: "red", marginTop: 12 }}>{error}</p>}
+            {error && <p style={{ color: "#ef4444", marginTop: 16, fontSize: 14 }}>{error}</p>}
+            {success && <p style={{ color: "#22c55e", marginTop: 16, fontSize: 14 }}>Saved successfully.</p>}
 
-            <div style={{ marginTop: 24, display: "flex", gap: 10 }}>
+            <div className="lms-form-actions" style={{ marginTop: 24 }}>
                 {!editing ? (
-                    <button className="edit-btn" onClick={() => setEditing(true)}>
+                    <button className="lms-btn-primary" onClick={() => setEditing(true)}>
                         Edit Profile
                     </button>
                 ) : (
                     <>
-                        <button className="edit-btn" onClick={handleSave} disabled={loading}>
-                            {loading ? "Saving..." : "Save"}
+                        <button className="lms-btn-primary" onClick={handleSave} disabled={saving}>
+                            {saving ? "Saving..." : "Save"}
                         </button>
-                        <button onClick={() => {
-                            setEditing(false);
-                            setFullName(user?.fullName || "");
-                            setLocation(user?.location || "");
-                            setAvatarUrl(user?.avatarUrl || "");
-                        }} style={{ padding: "8px 16px", borderRadius: 6, cursor: "pointer" }}>
+                        <button
+                            className="lms-btn-ghost"
+                            onClick={handleCancel}
+                            disabled={saving}
+                        >
                             Cancel
                         </button>
                     </>

@@ -1,47 +1,70 @@
+function getInitials(name) {
+    if (!name) return "?";
+    return name.split(" ").map(n => n[0]).filter(Boolean).slice(0, 2).join("").toUpperCase();
+}
+
+function resolveAvatarSrc(avatarUrl) {
+    if (!avatarUrl) return null;
+    return avatarUrl.startsWith("http") ? avatarUrl : `/img/IndexPage/${avatarUrl}`;
+}
+
+const STUDENT_MENU = [
+    { id: "courses",      label: "My Courses",   icon: "▤" },
+    { id: "certificates", label: "Certificates", icon: "✦" },
+    { id: "settings",     label: "Settings",     icon: "✱" },
+];
+
+const TEACHER_MENU = [
+    { id: "courses",  label: "Manage Courses", icon: "▤" },
+    { id: "settings", label: "Settings",       icon: "✱" },
+];
+
 function Sidebar({ profile, activeTab, setActiveTab, isTeacher }) {
-    const studentMenu = [
-        { id: "courses", label: "My Courses" },
-        { id: "certificates", label: "Certificates" },
-        { id: "settings", label: "Settings" },
-    ];
-
-    const teacherMenu = [
-        { id: "courses", label: "Manage Courses" },
-        { id: "settings", label: "Settings" },
-    ];
-
-    const menu = isTeacher ? teacherMenu : studentMenu;
+    const menu = isTeacher ? TEACHER_MENU : STUDENT_MENU;
+    const displayName = profile.fullName || profile.username || "User";
+    const avatarSrc = resolveAvatarSrc(profile.avatarUrl);
 
     return (
-        <div className="sidebar">
-            <img
-    src={
-        profile.avatarUrl
-            ? profile.avatarUrl.startsWith("http")
-                ? profile.avatarUrl
-                : `/img/IndexPage/${profile.avatarUrl}`
-            : "/img/IndexPage/default-avatar.jpg"
-    }
-    alt="avatar"
-    className="avatar"
-/>
+        <aside className="sidebar">
+            <div className="sidebar-brand">OYAN</div>
 
-            <h3>{profile.fullName || profile.username}</h3>
-<p className="location">{profile.location || "No location set"}</p>            {isTeacher && <span className="lms-role-badge">Professor</span>}
+            <div className="sidebar-profile">
+                <div className="avatar-wrapper">
+                    {avatarSrc ? (
+                        <img src={avatarSrc} alt="avatar" className="avatar" />
+                    ) : (
+                        <div className="avatar-initials">{getInitials(displayName)}</div>
+                    )}
+                </div>
 
-<button className="edit-btn" onClick={() => setActiveTab("settings")}>Edit Profile</button>
-            <div className="menu">
+                <p className="sidebar-name">{displayName}</p>
+                <p className="sidebar-location">
+                    {profile.location || "No location set"}
+                </p>
+                {isTeacher && <span className="sidebar-role-badge">Teacher</span>}
+
+                <button className="sidebar-edit-btn" onClick={() => setActiveTab("settings")}>
+                    Edit Profile
+                </button>
+            </div>
+
+            <nav className="sidebar-nav">
                 {menu.map(item => (
                     <button
                         key={item.id}
-                        className={activeTab === item.id ? "active" : ""}
+                        className={`sidebar-nav-item${activeTab === item.id ? " active" : ""}`}
                         onClick={() => setActiveTab(item.id)}
                     >
+                        <span className="sidebar-nav-icon">{item.icon}</span>
                         {item.label}
                     </button>
                 ))}
+            </nav>
+
+            <div className="sidebar-footer">
+                <span>© 2026 OYAN</span>
             </div>
-        </div>
+        </aside>
     );
 }
 
