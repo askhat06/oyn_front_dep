@@ -219,6 +219,8 @@ function LessonEditModal({ lesson, courseSlug, onClose, onSaved }) {
                             value={form.title}
                             onChange={(e) => set("title", e.target.value)}
                             required
+                            minLength={3}
+                            maxLength={180}
                         />
                     </div>
                     <div className="lms-field">

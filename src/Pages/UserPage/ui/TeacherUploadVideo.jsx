@@ -146,6 +146,8 @@ function UrlModeForm({ courses }) {
                     value={form.title}
                     onChange={e => set("title", e.target.value)}
                     required
+                    minLength={3}
+                    maxLength={180}
                 />
             </div>
 
@@ -343,6 +345,8 @@ function UploadModeForm({ courses }) {
                     value={form.title}
                     onChange={e => set("title", e.target.value)}
                     required
+                    minLength={3}
+                    maxLength={180}
                     disabled={busy}
                 />
             </div>
