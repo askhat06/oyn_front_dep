@@ -21,10 +21,10 @@ export async function apiFetch(endpoint, options = {}) {
   });
 
   if (response.status === 401) {
-    // Clear session on 401 Unauthorized
     localStorage.removeItem("token");
+    localStorage.removeItem("user");
     if (window.location.pathname !== "/login" && window.location.pathname !== "/registration") {
-      window.location.href = "/login"; 
+      window.location.href = "/login";
     }
     throw new Error("Unauthorized - session expired.");
   }
