@@ -1,9 +1,15 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const storedUser = localStorage.getItem("user");
+const storedToken = localStorage.getItem("token");
+
+// Token and user must exist together — clear stale user if token is gone
+if (storedUser && !storedToken) {
+    localStorage.removeItem("user");
+}
 
 const initialState = {
-    user: storedUser ? JSON.parse(storedUser) : null,
+    user: storedUser && storedToken ? JSON.parse(storedUser) : null,
 };
 
 // Нормализует роль с бэкенда к единому формату (строчные)

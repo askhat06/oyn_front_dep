@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 import Header from "../../Components/Header";
 import Footer from "../../Components/Footer";
 import { toast } from "react-toastify";
@@ -8,6 +9,7 @@ import styles from "./CourseLandingPage.module.css";
 function CourseLandingPage() {
   const { slug } = useParams();
   const navigate = useNavigate();
+  const user = useSelector((state) => state.user.user);
 
   const [course, setCourse] = useState(null);
   const [activeTab, setActiveTab] = useState("overview");
@@ -20,7 +22,20 @@ function CourseLandingPage() {
       });
   }, [slug]);
 
-  const handleEnrollment = () => {
+  const handleEnrollment = async () => {
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+    try {
+      await apiFetch(`/api/enrollments/courses/${slug}`, { method: "POST" });
+    } catch (err) {
+      if (err.status !== 409) {
+        toast.error(err.message || "Enrollment failed");
+        return;
+      }
+      // 409 = already enrolled, proceed to lesson
+    }
     if (course.lessons?.length > 0) {
       navigate(`/courses/${slug}/lessons/${course.lessons[0].slug}`);
     }
